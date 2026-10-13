@@ -1,3 +1,215 @@
-<Solution>
-  <Project Path="Prague Parking V1/Prague Parking V1.csproj" />
-</Solution>
+class Program
+{
+    static string[] parkering = new string[100];
+
+    static void Main()
+    {
+        for (int i = 0; i < parkering.Length; i++)
+        {
+            parkering[i] = "";
+        }
+
+        bool körProgram = true;
+
+        while (körProgram)
+        {
+            Console.WriteLine("\n=== PRAGUE PARKING ===");
+            Console.WriteLine("1. Parkera");
+            Console.WriteLine("2. Flytta");
+            Console.WriteLine("3. Hämta ut");
+            Console.WriteLine("4. Sök");
+            Console.WriteLine("5. Avsluta");
+            Console.Write("Välj: ");
+
+            string val = Console.ReadLine() ?? "";
+
+            if (val == "5")
+            {
+                körProgram = false;
+                continue;
+            }
+
+            if (val != "1" && val != "2" && val != "3" && val != "4")
+            {
+                Console.WriteLine("Välj mellan 1 och 5.");
+                continue;
+            }
+
+            Console.Write("Registreringsnummer: ");
+            string reg = Console.ReadLine() ?? "";
+            reg = reg.Trim().ToUpper();
+
+            if (reg.Length < 1 || reg.Length > 10
+                || reg.Contains("#") || reg.Contains("|"))
+            {
+                Console.WriteLine("Ange 1–10 tecken utan # eller |.");
+                continue;
+            }
+
+            int plats = -1;
+            string fordon = "";
+
+            // Sök efter fordonet i parkeringen.
+            for (int i = 0; i < parkering.Length; i++)
+            {
+                string[] fordonPaPlatsen = parkering[i].Split('|');
+
+                foreach (string ettFordon in fordonPaPlatsen)
+                {
+                    if (ettFordon != "")
+                    {
+                        string[] delar = ettFordon.Split('#');
+
+                        if (delar[1] == reg)
+                        {
+                            plats = i;
+                            fordon = ettFordon;
+                        }
+                    }
+                }
+            }
+
+            if (val == "1")
+            {
+                if (plats != -1)
+                {
+                    Console.WriteLine("Fordonet är redan parkerat.");
+                    continue;
+                }
+
+                Console.Write("Fordonstyp (1 = bil, 2 = MC): ");
+                string typval = Console.ReadLine() ?? "";
+                string typ = "";
+
+                if (typval == "1")
+                {
+                    typ = "CAR";
+                }
+                else if (typval == "2")
+                {
+                    typ = "MC";
+                }
+                else
+                {
+                    Console.WriteLine("Välj 1 eller 2.");
+                    continue;
+                }
+
+                for (int i = 0; i < parkering.Length; i++)
+                {
+                    if (FinnsPlats(i, typ))
+                    {
+                        plats = i;
+                        break;
+                    }
+                }
+
+                if (plats == -1)
+                {
+                    Console.WriteLine("Ingen plats finns för fordonet.");
+                }
+                else
+                {
+                    LaggTill(plats, typ + "#" + reg);
+                    Console.WriteLine($"Parkerat på plats {plats + 1}.");
+                }
+            }
+            else if (plats == -1)
+            {
+                Console.WriteLine("Fordonet hittades inte.");
+            }
+            else if (val == "4")
+            {
+                Console.WriteLine($"Fordonet står på plats {plats + 1}.");
+            }
+            else if (val == "3")
+            {
+                TaBort(plats, fordon);
+                Console.WriteLine($"Uthämtat från plats {plats + 1}.");
+            }
+            else if (val == "2")
+            {
+                Console.WriteLine($"Nuvarande plats: {plats + 1}");
+                Console.Write("Ny plats (1–100): ");
+
+                int platsnummer;
+                bool giltigtTal = int.TryParse(
+                    Console.ReadLine(), out platsnummer);
+
+                if (!giltigtTal || platsnummer < 1 || platsnummer > 100)
+                {
+                    Console.WriteLine("Ange ett heltal mellan 1 och 100.");
+                    continue;
+                }
+
+                int nyPlats = platsnummer - 1;
+                string[] delar = fordon.Split('#');
+                string typ = delar[0];
+
+                if (nyPlats == plats)
+                {
+                    Console.WriteLine("Fordonet står redan där.");
+                }
+                else if (!FinnsPlats(nyPlats, typ))
+                {
+                    Console.WriteLine("Fordonet får inte plats där.");
+                }
+                else
+                {
+                    TaBort(plats, fordon);
+                    LaggTill(nyPlats, fordon);
+                    Console.WriteLine($"Flyttat till plats {platsnummer}.");
+                }
+            }
+        }
+    }
+
+    static bool FinnsPlats(int plats, string typ)
+    {
+        if (parkering[plats] == "")
+        {
+            return true;
+        }
+
+        // En MC får dela plats med en annan MC.
+        if (typ == "MC")
+        {
+            string[] fordon = parkering[plats].Split('|');
+            string[] delar = fordon[0].Split('#');
+
+            if (fordon.Length == 1 && delar[0] == "MC")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static void LaggTill(int plats, string fordon)
+    {
+        if (parkering[plats] == "")
+        {
+            parkering[plats] = fordon;
+        }
+        else
+        {
+            parkering[plats] = parkering[plats] + "|" + fordon;
+        }
+    }
+
+    static void TaBort(int plats, string fordon)
+    {
+        string kvarvarande = "";
+
+        foreach (string ettFordon in parkering[plats].Split('|'))
+        {
+            if (ettFordon != fordon)
+            {
+                kvarvarande = ettFordon;
+            }
+        }
+
+        parkering[plats] = kvarvarande;
+    }
+}
